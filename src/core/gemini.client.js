@@ -1,0 +1,68 @@
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import logger from '../utils/logger';
+
+export class GeminiClient {
+  constructor(config, registry) {
+    this.registry = registry
+    this.genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
+    this.model = this.genAI.getGenerativeModel({
+      model: config.MODEL,
+      tools: registry.getTools(),
+      systemInstruction: config.RULES,
+    });
+    this.chat = this.model.startChat({ tools: registry.getTools() });
+  }
+
+  async processCommand(command) {
+    try {
+      let result = { text: '', function_calls: [] };
+      let response = await this.chat.sendMessage(command);
+
+      // Continue processing while response contains function calls
+      while (response.response.candidates[0].content.parts.some(part => part.functionCall)) {
+        const parts = response.response.candidates[0].content.parts;
+
+        for (const part of parts) {
+          if (part.functionCall) {
+            const functionCall = part.functionCall;
+            const functionName = functionCall.name;
+            const parameters = functionCall.args;
+
+            // logger.info({ functionName, parameters })
+
+            const func = this.registry.getFunctionMap()[functionName];
+            if (func) {
+              const funcResult = await func(...Object.values(parameters));
+              result.function_calls.push({
+                name: functionName,
+                parameters,
+                result: funcResult,
+              });
+
+              // Send function result back to Gemini
+              response = await this.chat.sendMessage([
+                {
+                  functionResponse: {
+                    name: functionName,
+                    response: { result: funcResult },
+                  },
+                },
+              ]);
+            } else {
+              return { text: `**Erro**: Função \`${functionName}\` não encontrada.`, function_calls: result.function_calls };
+            }
+          }
+        }
+      }
+
+      // After all function calls are resolved, get the final text response
+      const finalParts = response.response.candidates[0].content.parts;
+      result.text = finalParts[0]?.text || '';
+
+      return result;
+    } catch (error) {
+      logger.error(`Erro ao processar comando: ${error.message}`);
+      return { text: `**Erro**: Erro ao processar comando: ${error.message}`, function_calls: [] };
+    }
+  }
+}

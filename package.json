@@ -1,0 +1,34 @@
+{
+  "name": "agent-x",
+  "version": "1.0.0",
+  "description": "CLI tool for AI-driven automation with GitHub, Azure DevOps, and more",
+  "module": "index.ts",
+  "scripts": {
+    "build": "bun build ./src/index.js --compile --outfile ./build/jarvis"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-amplify": "^3.693.0",
+    "@aws-sdk/client-cloudwatch": "^3.696.0",
+    "@aws-sdk/client-lambda": "^3.693.0",
+    "@aws-sdk/client-secrets-manager": "^3.693.0",
+    "@aws-sdk/credential-providers": "^3.693.0",
+    "@google/generative-ai": "^0.24.1",
+    "@inquirer/prompts": "^7.1.0",
+    "axios": "^1.7.9",
+    "chalk": "^5.3.0",
+    "commander": "^14.0.0",
+    "lodash": "^4.17.21",
+    "marked": "^15.0.12",
+    "morgan": "^1.10.0",
+    "openai": "^5.1.1",
+    "winston": "^3.17.0",
+    "zod": "^3.25.56"
+  }
+}
