@@ -27,7 +27,9 @@ program
   .command('run')
   .description('Executa um único comando passado como argumento.')
   .argument('<command>', 'Comando a ser executado')
+  .option('-g, --gemini', 'Usar GeminiClient')
   .option('-o, --openai', 'Usar OpenAIClient em vez de GeminiClient')
+  .option('-w, --web', 'Pesquisa web')
   .action(async (command, options) => {
     const registry = new ServiceRegistry();
     registry.registerService(new SystemService());
@@ -38,7 +40,15 @@ program
     registry.registerService(new GitHubService());
 
     const rules = await getRules();
-    const client = options?.openai ? new OpenAIClient(rules, registry) : new OpenAIClient(rules, registry);
+
+    if (options?.web) {
+      const client = new GeminiClient(rules, registry)
+      const result = await client.webSearch(command);
+      console.log(chalk.greenBright('► ' + result.text));
+      return;
+    }
+
+    const client = options?.gemini ? new GeminiClient(rules, registry) : new OpenAIClient(rules, registry);
 
     const result = await client.processCommand(command);
     if (result.text) {

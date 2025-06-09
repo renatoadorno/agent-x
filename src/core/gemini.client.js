@@ -1,3 +1,6 @@
+// nesse codigo termine a funcao webSearch, para o Gemini fazer pesquisas na web
+// lenbrando que o gemini ja possui esse recurso de pesquisa
+// me responda em portugues
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import logger from '../utils/logger';
 
@@ -63,6 +66,37 @@ export class GeminiClient {
     } catch (error) {
       logger.error(`Erro ao processar comando: ${error.message}`);
       return { text: `**Erro**: Erro ao processar comando: ${error.message}`, function_calls: [] };
+    }
+  }
+
+  async webSearch(command) {
+    try {
+      logger.info(`Realizando pesquisa na web com Embasamento com a Pesquisa Google para o comando: ${command}`);
+
+      // Criar uma nova sessão de chat para a pesquisa, com grounding habilitado
+      const chatSession = this.model.startChat({
+        tools: [
+          {
+            googleSearch: {}, // Habilitar Embasamento com a Pesquisa Google
+          },
+        ],
+      });
+
+      // Enviar o comando para a sessão de chat com grounding
+      const response = await chatSession.sendMessage(command);
+
+      // Verificar se há resposta válida
+      const finalParts = response.response.candidates[0].content.parts;
+      if (!finalParts[0]?.text) {
+        return { text: 'Nenhum resultado de pesquisa encontrado.', function_calls: [] };
+      }
+
+      const responseText = finalParts[0].text;
+
+      return { text: responseText, function_calls: [] };
+    } catch (error) {
+      // logger.error(`Erro ao realizar pesquisa na web: ${error.message}`);
+      return { text: `**Erro**: Erro ao realizar pesquisa na web: ${error.message}`, function_calls: [] };
     }
   }
 }
