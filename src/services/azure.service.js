@@ -5,12 +5,12 @@ import axios from "axios";
 // Na seguinte classe altere o getWorkItem(id) para utilizar o axios
 export class DevOpsService {
   constructor() {
-    this.organization = 'guicheweb';
+    this.organization = Bun.env.AZURE_DEVOPS_ORGANIZATION;
     this.project = Bun.env.AZURE_DEVOPS_DEFAULT_PROJECT;
     this.pat = Bun.env.AZURE_DEVOPS_PAT; // Substitua pelo seu PAT
     this.auth = Buffer.from(`:${this.pat}`).toString('base64');
     this.sprintPath = Bun.env.AZURE_DEVOPS_SPRINT_PATH; // Substitua pelo caminho da sprint
-    this.assignedTo = 'renato@guicheweb.com.br'; // Substitua pelo e-mail do responsável
+    this.assignedTo = Bun.env.AZURE_DEVOPS_USER_EMAIL; // Substitua pelo e-mail do responsável
     this.api = axios.create({
       baseURL: `https://dev.azure.com/${this.organization}/${this.project}/_apis`,
       headers: {

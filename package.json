@@ -1,7 +1,7 @@
 {
   "name": "agent-x",
   "version": "1.0.0",
-  "description": "CLI tool for AI-driven automation with GitHub, Azure DevOps, and more",
+  "description": "Ferramenta CLI para automação orientada por IA",
   "module": "index.ts",
   "scripts": {
     "build": "bun build ./src/index.js --compile --outfile ./build/jarvis"
