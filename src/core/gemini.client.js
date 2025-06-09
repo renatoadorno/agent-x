@@ -2,13 +2,13 @@ import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import logger from '../utils/logger';
 
 export class GeminiClient {
-  constructor(config, registry) {
+  constructor(rules, registry) {
     this.registry = registry
-    this.genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
+    this.genAI = new GoogleGenerativeAI(Bun.env.GOOGLE_API_KEY);
     this.model = this.genAI.getGenerativeModel({
-      model: config.MODEL,
+      model: Bun.env.GEMINI_MODEL,
       tools: registry.getTools(),
-      systemInstruction: config.RULES,
+      systemInstruction: rules,
     });
     this.chat = this.model.startChat({ tools: registry.getTools() });
   }

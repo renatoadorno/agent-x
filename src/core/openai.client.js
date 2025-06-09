@@ -1,15 +1,15 @@
 import OpenAI from "openai";
 import logger from '../utils/logger';
 
-const googleCliente = new OpenAI({
-  apiKey: Bun.env.GOOGLE_API_KEY,
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
-});
+// const googleCliente = new OpenAI({
+//   apiKey: Bun.env.GOOGLE_API_KEY,
+//   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+// });
 
-const xAiClient = new OpenAI({
-  apiKey: Bun.env.XAI_API_KEY,
-  baseURL: "https://api.x.ai/v1",
-});
+// const xAiClient = new OpenAI({
+//   apiKey: Bun.env.XAI_API_KEY,
+//   baseURL: "https://api.x.ai/v1",
+// });
 
 export class OpenAIClient {
   constructor(rules, registry) {
@@ -18,7 +18,7 @@ export class OpenAIClient {
       apiKey: Bun.env.XAI_API_KEY,
       baseURL: "https://api.x.ai/v1",
     });
-    this.model = Bun.env.MODEL; // Default to GPT-4o, configurable
+    this.model = Bun.env.XAI_MODEL; // Default to GPT-4o, configurable
     this.systemInstruction = rules; // System prompt or rules
     this.tools = registry.getOpenAiTools();
   }
