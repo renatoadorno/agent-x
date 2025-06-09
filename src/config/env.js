@@ -1,12 +1,21 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '/Users/renatoadorno/cli/.env' });
+
 export const settings = {
-  GOOGLE_API_KEY: Bun.env.GOOGLE_API_KEY,
-  MODEL: Bun.env.MODEL,
-  AZURE_DEVOPS_DEFAULT_PROJECT: Bun.env.AZURE_DEVOPS_DEFAULT_PROJECT,
-  AZURE_DEVOPS_PAT: Bun.env.AZURE_DEVOPS_PAT,
-  AZURE_DEVOPS_ORG_URL: Bun.env.AZURE_DEVOPS_ORG_URL,
-  AZURE_DEVOPS_SPRINT_PATH: Bun.env.AZURE_DEVOPS_SPRINT_PATH,
-  GITHUB_PAT: Bun.env.GITHUB_PAT,
-  XAI_API_KEY: Bun.env.XAI_API_KEY
+  GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+  GEMINI_MODEL: process.env.GEMINI_MODEL,
+
+  XAI_API_KEY: process.env.XAI_API_KEY,
+  XAI_MODEL: process.env.XAI_MODEL,
+
+  GITHUB_PAT: process.env.GITHUB_PAT,
+
+  AZURE_DEVOPS_ORGANIZATION: process.env.AZURE_DEVOPS_ORGANIZATION,
+  AZURE_DEVOPS_USER_EMAIL: process.env.AZURE_DEVOPS_USER_EMAIL,
+  AZURE_DEVOPS_DEFAULT_PROJECT: process.env.AZURE_DEVOPS_DEFAULT_PROJECT,
+  AZURE_DEVOPS_PAT: process.env.AZURE_DEVOPS_PAT,
+  AZURE_DEVOPS_ORG_URL: process.env.AZURE_DEVOPS_ORG_URL,
+  AZURE_DEVOPS_SPRINT_PATH: process.env.AZURE_DEVOPS_SPRINT_PATH,
 }
 
 const models = ['gemini-2.5-flash-preview-05-20', 'grok-3']

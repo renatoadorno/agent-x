@@ -1,6 +1,5 @@
 import { $, Glob } from 'bun';
-import { homedir } from 'os';
-import { join } from 'path';
+import logger from '../utils/logger';
 import { SchemaType } from '@google/generative-ai';
 
 export class GitService {
@@ -70,6 +69,10 @@ export class GitService {
         description: 'Lista as branches do repositorio e workdir atual',
       },
       {
+        name: 'gitBranchListDetails',
+        description: 'Lista as branches do repositorio e workdir atual, de forma mais dedalhada e com mais informacaoes',
+      },
+      {
         name: 'newBranch',
         description: 'Cria uma nova branch para o repositorio e workdir atual',
         parameters: {
@@ -81,15 +84,22 @@ export class GitService {
         },
       },
       {
-        name: 'gitCommand',
-        description: 'Execute qualquer comando git necessario',
+        name: 'remove_branch',
+        description: 'Remove uma branch Git local com git branch -D.',
         parameters: {
           type: SchemaType.OBJECT,
           properties: {
-            command: { type: SchemaType.STRING, description: 'Comando do git Ex: git branch' },
+            branchName: {
+              type: 'string',
+              description: 'Nome da branch a ser removida.',
+            },
           },
-          required: ['command'],
+          required: ['branchName'],
         },
+      },
+      {
+        name: 'listBranchsNoSyncRemote',
+        description: 'Lista as branches que ainda não foram sincronizadas com o remoto',
       },
     ];
   }
@@ -103,7 +113,9 @@ export class GitService {
       git_push: this.gitPush.bind(this),
       gitBranchList: this.gitBranchList.bind(this),
       newBranch: this.newBranch.bind(this),
-      gitCommand: this.gitCommand.bind(this),
+      remove_branch: this.removeBranch.bind(this),
+      listBranchsNoSyncRemote: this.listBranchsNoSyncRemote.bind(this),
+      gitBranchListDetails: this.gitBranchListDetails.bind(this),
     };
   }
 
@@ -157,6 +169,10 @@ export class GitService {
     return await $`git branch`.text();
   }
 
+  async gitBranchListDetails() {
+    return await $`git branch -vv`.text();
+  }
+
   async newBranch(newBranchName) {
     const branchs = await $`git branch`.text();
 
@@ -171,7 +187,59 @@ export class GitService {
     return `Nova branch ${newBranchName} criada com sucesso!`
   }
 
-  async gitCommand(command) {
-    return await $`${command}`.text()
+  async listBranchsNoSyncRemote() {
+    try {
+      const result =  await $`git for-each-ref --format="%(refname:short)" refs/heads/ | grep -vE "^$(git ls-remote --heads origin | cut -f2 | sed 's#refs/heads/##')"`.text();
+      return result
+    } catch(err) {
+      // logger.info(err)
+      return `Erro: ${err}`
+    }
+  }
+
+  // como executar esse tipo de comando no shell do bun, estou tendo problemas
+  async removeBranch(params) {
+    try {
+      // Extrair branchName do objeto ou usar diretamente se for string
+      let branchName = typeof params === 'object' && params !== null ? params.branchName : params;
+
+      // Depurar o branchName recebido
+      logger.debug(`branchName recebido: ${JSON.stringify(branchName)} (tipo: ${typeof branchName})`);
+
+      // Verificar se branchName é uma string válida
+      if (branchName == null || typeof branchName !== 'string') {
+        const errorMsg = `Nome da branch inválido: ${JSON.stringify(branchName)} (esperado: string, recebido: ${typeof branchName})`;
+        logger.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Limpar o branchName
+      let cleanedBranchName = branchName
+        .replace(/\\+$/, '') // Remove barras invertidas no final
+        .replace(/^['"]|['"]$/g, '') // Remove aspas no início ou fim
+        .trim(); // Remove espaços em branco
+
+      // Validar contra caracteres perigosos
+      if (!cleanedBranchName || cleanedBranchName.match(/[\s;|$&]/)) {
+        const errorMsg = `Nome da branch contém caracteres inválidos ou está vazio: ${cleanedBranchName}`;
+        logger.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Depurar o branchName limpo
+      logger.debug(`branchName limpo: '${cleanedBranchName}'`);
+
+      // Executar o comando git
+      const result = await $`git branch -D ${cleanedBranchName}`.quiet().text();
+
+      // Log de sucesso
+      logger.info(`Branch ${cleanedBranchName} removida com sucesso.`);
+      return `Branch ${cleanedBranchName} removida com sucesso.`;
+    } catch (err) {
+      // Capturar stderr, se disponível
+      const errorMessage = err.stderr?.toString() || err.message || 'Erro desconhecido ao remover a branch.';
+      logger.error(`Erro ao remover branch ${JSON.stringify(params)}: ${errorMessage}`);
+      return `Erro: ${errorMessage}`;
+    }
   }
 }

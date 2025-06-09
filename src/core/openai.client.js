@@ -1,6 +1,7 @@
 // nesse codigo termine a funcao webSearch, para OpenAI fazer pesquisas na web
 import OpenAI from "openai";
 import logger from "../utils/logger";
+import { settings } from "../config/env";
 
 // const googleCliente = new OpenAI({
 //   apiKey: Bun.env.GOOGLE_API_KEY,
@@ -16,10 +17,10 @@ export class OpenAIClient {
   constructor(rules, registry) {
     this.registry = registry;
     this.client = new OpenAI({
-      apiKey: Bun.env.XAI_API_KEY,
+      apiKey: settings.XAI_API_KEY,
       baseURL: "https://api.x.ai/v1",
     });
-    this.model = Bun.env.XAI_MODEL; // Default to GPT-4o, configurable
+    this.model = settings.XAI_MODEL; // Default to GPT-4o, configurable
     this.systemInstruction = rules; // System prompt or rules
     this.tools = registry.getOpenAiTools();
     this.assistant = null;
