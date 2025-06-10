@@ -28,3 +28,11 @@ bun run build
 - Template build projects
 - Google drive
 - Spotify
+
+Exemplo:
+
+Isso funciona
+/Users/renatoadorno/work/agent-x/dist/agent-macos-arm64 run "me de um exemplo de query mysql para criar um tabela" -g
+
+Mas isso nao
+/Users/renatoadorno/cli/agent-macos-arm64 run "me de um exemplo de query mysql para criar um tabela” -g

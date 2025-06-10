@@ -1,27 +1,38 @@
-// Aqui nesse codigo quero colocar uma option
-// option -o utiliza OpenAIClient
-// caso ao contrario utiliza o GeminiClient
+// Determinar o diretório do binário
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { GitService } from './services/git.service';
 import { SystemService } from './services/system.service';
 import { GeminiClient } from './core/gemini.client';
 import { ServiceRegistry } from './core/service.registry';
-import { settings } from './config/env';
-import { getRules } from './config/rules';
 import { DevOpsService } from './services/azure.service';
 import { InstructionsService } from './services/instructions.service';
 import { LambdaService } from './services/aws.service';
 import { GitHubService } from './services/github.service';
 import { OpenAIClient } from './core/openai.client';
 import logger from './utils/logger';
+import { loadConfig } from './config';
+
+// Determinar o diretório do binário
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // CLI setup using commander
 const program = new Command();
 
 program
   .name('agent')
-  .description('CLI para interagir com o Agent, suportando comandos interativos e diretos.');
+  .description('CLI para interagir com o Agent, suportando comandos interativos e diretos.')
+  .version('1.0.0', '-v, --version', 'Exibe a versão da CLI')
+  .on('--help', () => {
+    logger.info('Exibindo ajuda da CLI');
+    console.log(chalk.yellow('\nExemplos de uso:'));
+    console.log('  $ agent run "listar arquivos no diretório atual"');
+    console.log('  $ agent run -g "criar nova branch teste"');
+    console.log('  $ agent run -o "pesquisar na web por TypeScript"');
+  });
 
 program
   .command('run')
@@ -31,30 +42,69 @@ program
   .option('-o, --openai', 'Usar OpenAIClient em vez de GeminiClient')
   .option('-w, --web', 'Pesquisa web')
   .action(async (command, options) => {
-    const registry = new ServiceRegistry();
-    registry.registerService(new SystemService());
-    registry.registerService(new GitService());
-    registry.registerService(new DevOpsService());
-    registry.registerService(new InstructionsService());
-    registry.registerService(new LambdaService());
-    registry.registerService(new GitHubService());
+    try {
+      logger.info(`Iniciando execução da CLI com comando: ${command}`);
+      logger.debug(`Opções fornecidas: ${JSON.stringify(options)}`);
 
-    const rules = await getRules();
+      const config = await loadConfig();
 
-    if (options?.web) {
-      const client = new GeminiClient(rules, registry)
-      const result = await client.webSearch(command);
-      console.log(chalk.greenBright('► ' + result.text));
-      return;
-    }
+      const registry = new ServiceRegistry();
+      logger.info('Registrando serviços...');
+      registry.registerService(new SystemService());
+      registry.registerService(new GitService());
+      registry.registerService(new DevOpsService(config));
+      registry.registerService(new InstructionsService());
+      registry.registerService(new LambdaService());
+      registry.registerService(new GitHubService(config));
+      logger.info('Serviços registrados com sucesso.');
 
-    const client = options?.gemini ? new GeminiClient(rules, registry) : new OpenAIClient(rules, registry);
+      // logger.debug(`Regras carregadas: ${config.substring(0, 100)}...`);
 
-    const result = await client.processCommand(command);
-    if (result.text) {
-      console.log(chalk.greenBright('► ' + result.text));
+      let result;
+      if (options?.web) {
+        logger.info('Executando pesquisa na web com GeminiClient');
+        const client = new GeminiClient(config, registry);
+        result = await client.webSearch(command);
+      } else {
+        const clientType = options?.gemini ? 'GeminiClient' : 'OpenAIClient';
+        logger.info(`Usando ${clientType} para processar o comando`);
+        const client = options?.gemini
+          ? new GeminiClient(config, registry)
+          : new OpenAIClient(config, registry);
+        result = await client.processCommand(command);
+      }
+
+      if (result.text) {
+        console.log(chalk.greenBright('► ' + result.text));
+      } else {
+        logger.warn('Nenhum texto retornado pelo cliente.');
+        console.log(chalk.yellow('Nenhum resultado retornado.'));
+      }
+
+      if (result.function_calls.length > 0) {
+        logger.debug(`Chamadas de função realizadas: ${JSON.stringify(result.function_calls, null, 2)}`);
+      }
+    } catch (error) {
+      logger.error(`Erro durante a execução da CLI: ${error.message}`, { stack: error.stack });
+      console.error(chalk.red(`Erro: ${error.message}`));
+      process.exit(1);
     }
   });
 
+// Capturar erros não tratados
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error(`Erro não tratado na promessa: ${reason}`, { promise, stack: reason.stack });
+  console.error(chalk.red('Erro inesperado. Veja os logs para mais detalhes.'));
+  process.exit(1);
+});
+
+// Verificar se nenhum comando foi fornecido
+if (process.argv.length <= 2) {
+  logger.warn('Nenhum comando fornecido. Exibindo ajuda.');
+  console.log(chalk.yellow('Nenhum comando fornecido. Use --help para ver as opções disponíveis.'));
+  program.help();
+}
+
 // Execute CLI
+logger.info('Iniciando CLI...');
 program.parse(process.argv);

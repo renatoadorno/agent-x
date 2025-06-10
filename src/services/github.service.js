@@ -1,11 +1,10 @@
 import axios from 'axios';
 import logger from '../utils/logger';
 import { SchemaType } from '@google/generative-ai';
-import { settings } from '../config/env';
 
 export class GitHubService {
-  constructor() {
-    this.pat = settings.GITHUB_PAT; // GitHub Personal Access Token from environment
+  constructor(config) {
+    this.pat = config.GITHUB_PAT; // GitHub Personal Access Token from environment
     this.api = axios.create({
       baseURL: 'https://api.github.com',
       headers: {

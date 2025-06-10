@@ -1,0 +1,17 @@
+xai:
+  api_key: ""
+  model: "grok-3"
+github:
+  pat: ""
+azure_devops:
+  organization: ""
+  default_project: ""
+  pat: ""
+  sprint_path: "project\\sprint 20"
+  user_email: ""
+gemini:
+  api_key: ""
+  model: "gemini-2.5-flash-preview-05-20"
+logging:
+  level: "info"
+  dir: "logs"

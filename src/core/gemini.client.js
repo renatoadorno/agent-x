@@ -3,16 +3,15 @@
 // me responda em portugues
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import logger from '../utils/logger';
-import { settings } from '../config/env';
 
 export class GeminiClient {
-  constructor(rules, registry) {
+  constructor(config, registry) {
     this.registry = registry
-    this.genAI = new GoogleGenerativeAI(settings.GOOGLE_API_KEY);
+    this.genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
     this.model = this.genAI.getGenerativeModel({
-      model: settings.GEMINI_MODEL,
+      model: config.GEMINI_MODEL,
       tools: registry.getTools(),
-      systemInstruction: rules,
+      systemInstruction: config.RULES,
     });
     this.chat = this.model.startChat({ tools: registry.getTools() });
   }

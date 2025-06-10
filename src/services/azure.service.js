@@ -1,17 +1,16 @@
 import logger from '../utils/logger';
 import { SchemaType } from '@google/generative-ai';
 import axios from "axios";
-import { settings } from '../config/env';
 
 // Na seguinte classe altere o getWorkItem(id) para utilizar o axios
 export class DevOpsService {
-  constructor() {
-    this.organization = settings.AZURE_DEVOPS_ORGANIZATION;
-    this.project = settings.AZURE_DEVOPS_DEFAULT_PROJECT;
-    this.pat = settings.AZURE_DEVOPS_PAT; // Substitua pelo seu PAT
+  constructor(config) {
+    this.organization = config.AZURE_DEVOPS_ORGANIZATION;
+    this.project = config.AZURE_DEVOPS_DEFAULT_PROJECT;
+    this.pat = config.AZURE_DEVOPS_PAT; // Substitua pelo seu PAT
     this.auth = Buffer.from(`:${this.pat}`).toString('base64');
-    this.sprintPath = settings.AZURE_DEVOPS_SPRINT_PATH; // Substitua pelo caminho da sprint
-    this.assignedTo = settings.AZURE_DEVOPS_USER_EMAIL; // Substitua pelo e-mail do responsável
+    this.sprintPath = config.AZURE_DEVOPS_SPRINT_PATH; // Substitua pelo caminho da sprint
+    this.assignedTo = config.AZURE_DEVOPS_USER_EMAIL; // Substitua pelo e-mail do responsável
     this.api = axios.create({
       baseURL: `https://dev.azure.com/${this.organization}/${this.project}/_apis`,
       headers: {
