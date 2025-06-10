@@ -15,10 +15,6 @@ import { OpenAIClient } from './core/openai.client';
 import logger from './utils/logger';
 import { loadConfig } from './config';
 
-// Determinar o diretório do binário
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 // CLI setup using commander
 const program = new Command();
 
@@ -82,7 +78,7 @@ program
       }
 
       if (result.function_calls.length > 0) {
-        logger.debug(`Chamadas de função realizadas: ${JSON.stringify(result.function_calls, null, 2)}`);
+        logger.debug(`\n Chamadas de função realizadas: ${JSON.stringify(result.function_calls, null, 2)}`);
       }
     } catch (error) {
       logger.error(`Erro durante a execução da CLI: ${error.message}`, { stack: error.stack });

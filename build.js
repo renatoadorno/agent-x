@@ -13,7 +13,7 @@ async function build() {
 
   // Criar diretório de saída
   // await $`mkdir -p dist`;
-  // await $`rm /Users/renatoadorno/cli/jarvis`;
+  await $`rm /Users/renatoadorno/cli/jarvis/bin`;
 
   for (const { platform, outfile } of targets) {
     console.log(`Construindo binário para ${platform}...`);

@@ -1,21 +1,30 @@
-import { createLogger, format, transports } from 'winston';
-// import { resolve, dirname } from 'path';
-// import { fileURLToPath } from 'url';
-// import { $ } from 'bun';
+// import chalk from 'chalk';
 
-// const logLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
-
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.errors({ stack: true }),
-    format.json()
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'app.log' }),
-  ],
-});
+const logger = {
+  error: (message) => {
+    console.error(message)
+  },
+  warn: (message) => {
+    console.warn(message)
+  },
+  help: (message) => {
+    console.info(message)
+  },
+  data: (message) => {
+    console.info(message)
+  },
+  info: (message) => {
+    console.info(message)
+  },
+  debug: (message) => {
+    console.info(message)
+  },
+  alert: (message) => {
+    console.warn(message)
+  },
+  warning: (message) => {
+    console.warn(message)
+  },
+}
 
 export default logger;
