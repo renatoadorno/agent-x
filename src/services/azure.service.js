@@ -193,14 +193,14 @@ export class DevOpsService {
     }
   }
 
-  async getWorkItem(id) {
+  async getWorkItem(parameters) {
     try {
-      if (!Number.isInteger(id) || id <= 0) {
-        throw new Error(`ID inválido: ${id}. Deve ser um número inteiro positivo.`);
+      if (!Number.isInteger(parameters.id) || parameters.id <= 0) {
+        throw new Error(`ID inválido: ${parameters.id}. Deve ser um número inteiro positivo.`);
       }
 
-      console.info(`Obtendo detalhes do work item ${id}`);
-      const response = await this.api.get(`/wit/workitems/${id}?$expand=relations&api-version=7.1`);
+      console.info(`Obtendo detalhes do work item ${parameters.id}`);
+      const response = await this.api.get(`/wit/workitems/${parameters.id}?$expand=relations&api-version=7.1`);
 
       const workItem = response.data;
       return {

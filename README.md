@@ -22,3 +22,9 @@ bun run ./src/index.js run "Liste meus GitHub repositories"
 ```bash
 bun run build
 ```
+
+## Task
+- Favoritos web
+- Template build projects
+- Google drive
+- Spotify
