@@ -1,6 +1,17 @@
 // import chalk from 'chalk';
 
-const logger = {
+interface Logger {
+  error: (message: string) => void;
+  warn: (message: string) => void;
+  help: (message: string) => void;
+  data: (message: string) => void;
+  info: (message: any) => void;
+  debug: (message: string) => void;
+  alert: (message: string) => void;
+  warning: (message: string) => void;
+}
+
+const logger: Logger = {
   error: (message) => {
     console.error(message)
   },

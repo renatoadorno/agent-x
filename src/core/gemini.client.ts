@@ -4,9 +4,32 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import logger from '../utils/logger';
 
+// Tipos mínimos para config e resultado
+interface GeminiConfig {
+  GOOGLE_API_KEY: string;
+  GEMINI_MODEL: string;
+  RULES: string;
+}
+
+interface FunctionCallResult {
+  name: string;
+  parameters: any;
+  result: any;
+}
+
+interface AgentResult {
+  text: string;
+  function_calls: FunctionCallResult[];
+}
+
 export class GeminiClient {
-  constructor(config, registry) {
-    this.registry = registry
+  private registry: any;
+  private genAI: any;
+  private model: any;
+  private chat: any;
+
+  constructor(config: GeminiConfig, registry: any) {
+    this.registry = registry;
     this.genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
     this.model = this.genAI.getGenerativeModel({
       model: config.GEMINI_MODEL,
@@ -16,13 +39,16 @@ export class GeminiClient {
     this.chat = this.model.startChat({ tools: registry.getTools() });
   }
 
-  async processCommand(command) {
+  async processCommand(command: string): Promise<AgentResult> {
+    logger.info(command)
     try {
-      let result = { text: '', function_calls: [] };
-      let response = await this.chat.sendMessage(command);
+      let result: AgentResult = { text: '', function_calls: [] };
+      let response: any = await this.chat.sendMessage(command);
+
+      logger.info(response)
 
       // Continue processing while response contains function calls
-      while (response.response.candidates[0].content.parts.some(part => part.functionCall)) {
+      while (response.response.candidates[0].content.parts.some((part: any) => part.functionCall)) {
         const parts = response.response.candidates[0].content.parts;
 
         for (const part of parts) {
@@ -31,7 +57,7 @@ export class GeminiClient {
             const functionName = functionCall.name;
             const parameters = functionCall.args;
 
-            // logger.info({ functionName, parameters })
+            logger.info({ functionName, parameters })
 
             const func = this.registry.getFunctionMap()[functionName];
             if (func) {
@@ -63,13 +89,13 @@ export class GeminiClient {
       result.text = finalParts[0]?.text || '';
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Erro ao processar comando: ${error.message}`);
       return { text: `**Erro**: Erro ao processar comando: ${error.message}`, function_calls: [] };
     }
   }
 
-  async webSearch(command) {
+  async webSearch(command: string): Promise<AgentResult> {
     try {
       logger.info(`Realizando pesquisa na web com Embasamento com a Pesquisa Google para o comando: ${command}`);
 
@@ -83,7 +109,7 @@ export class GeminiClient {
       });
 
       // Enviar o comando para a sessão de chat com grounding
-      const response = await chatSession.sendMessage(command);
+      const response: any = await chatSession.sendMessage(command);
 
       // Verificar se há resposta válida
       const finalParts = response.response.candidates[0].content.parts;
@@ -94,7 +120,7 @@ export class GeminiClient {
       const responseText = finalParts[0].text;
 
       return { text: responseText, function_calls: [] };
-    } catch (error) {
+    } catch (error: any) {
       // logger.error(`Erro ao realizar pesquisa na web: ${error.message}`);
       return { text: `**Erro**: Erro ao realizar pesquisa na web: ${error.message}`, function_calls: [] };
     }

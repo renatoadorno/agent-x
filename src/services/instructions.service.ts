@@ -1,5 +1,5 @@
 export class InstructionsService {
-  getFunctionDeclarations() {
+  getFunctionDeclarations(): any[] {
     return [
       {
         name: 'initWorkflowInstructions',
@@ -12,14 +12,14 @@ export class InstructionsService {
     ];
   }
 
-  getFunctionMap() {
+  getFunctionMap(): Record<string, () => Promise<string>> {
     return {
       initWorkflowInstructions: this.initWorkflowInstructions.bind(this),
       newTaskInstructions: this.newTaskInstructions.bind(this),
     };
   }
 
-  async initWorkflowInstructions() {
+  async initWorkflowInstructions(): Promise<string> {
     return `
 O Workflow é um processo feito antes de criar um tarefa no devops, a base da criacoa do workflow vai ser sempre uma descricao, apartir disso crie todas as outras coisas seguindo as regras
 Regras para iniciar um Workflow:
@@ -33,7 +33,7 @@ Regras para iniciar um Workflow:
     `
   }
 
-  async newTaskInstructions() {
+  async newTaskInstructions(): Promise<string> {
     return `
 Regras para iniciar um Workflow:
 - Meu usuario no devops vai ser sempre "renato@guicheweb.com.br"

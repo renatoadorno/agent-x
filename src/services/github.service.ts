@@ -2,8 +2,16 @@ import axios from 'axios';
 import logger from '../utils/logger';
 import { SchemaType } from '@google/generative-ai';
 
+// Tipos mínimos para config e parâmetros
+interface GitHubConfig {
+  GITHUB_PAT: string;
+}
+
 export class GitHubService {
-  constructor(config) {
+  private pat: string;
+  private api: any;
+
+  constructor(config: GitHubConfig) {
     this.pat = config.GITHUB_PAT; // GitHub Personal Access Token from environment
     this.api = axios.create({
       baseURL: 'https://api.github.com',
@@ -16,7 +24,7 @@ export class GitHubService {
     });
   }
 
-  getFunctionDeclarations() {
+  getFunctionDeclarations(): any[] {
     return [
       {
         name: 'list_user_repositories',
@@ -50,21 +58,21 @@ export class GitHubService {
     ];
   }
 
-  getFunctionMap() {
+  getFunctionMap(): Record<string, (...args: any[]) => any> {
     return {
       list_user_repositories: this.listUserRepositories.bind(this),
       list_org_repositories: this.listOrgRepositories.bind(this),
     };
   }
 
-  async listUserRepositories(visibility) {
+  async listUserRepositories(visibility?: string): Promise<string> {
     try {
       logger.info(`[API] Listing user repositories${visibility ? ` with visibility: ${visibility}` : ''}`);
 
       const params = visibility ? { visibility } : {};
       const response = await this.api.get('/user/repos', { params });
 
-      const repositories = response.data.map(repo => ({
+      const repositories = response.data.map((repo: any) => ({
         id: repo.id,
         name: repo.name,
         full_name: repo.full_name,
@@ -80,19 +88,19 @@ export class GitHubService {
       }
 
       return `**User repositories${visibility ? ` (${visibility})` : ''}**:\n\`\`\`json\n${JSON.stringify(repositories, null, 2)}\n\`\`\``;
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Error listing user repositories: ${error.message}`);
       return `**Error listing user repositories**: ${error.response?.data?.message || error.message}`;
     }
   }
 
-  async listOrgRepositories(org) {
+  async listOrgRepositories(org: string): Promise<string> {
     try {
       logger.info(`[API] Listing repositories for organization: ${org}`);
 
       const response = await this.api.get(`/orgs/${org}/repos`);
 
-      const repositories = response.data.map(repo => ({
+      const repositories = response.data.map((repo: any) => ({
         id: repo.id,
         name: repo.name,
         full_name: repo.full_name,
@@ -108,7 +116,7 @@ export class GitHubService {
       }
 
       return `**Repositories for organization ${org}**:\n\`\`\`json\n${JSON.stringify(repositories, null, 2)}\n\`\`\``;
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Error listing organization repositories: ${error.message}`);
       return `**Error listing organization repositories**: ${error.response?.data?.message || error.message}`;
     }

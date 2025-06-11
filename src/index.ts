@@ -30,6 +30,26 @@ program
     console.log('  $ agent run -o "pesquisar na web por TypeScript"');
   });
 
+// Tipos mínimos para config e result
+interface AgentConfig {
+  GOOGLE_API_KEY: string;
+  GEMINI_MODEL: string;
+  XAI_API_KEY: string;
+  XAI_MODEL: string;
+  GITHUB_PAT: string;
+  AZURE_DEVOPS_ORGANIZATION: string;
+  AZURE_DEVOPS_USER_EMAIL: string;
+  AZURE_DEVOPS_DEFAULT_PROJECT: string;
+  AZURE_DEVOPS_PAT: string;
+  AZURE_DEVOPS_SPRINT_PATH: string;
+  RULES: string;
+}
+
+interface AgentResult {
+  text: string;
+  function_calls: any[];
+}
+
 program
   .command('run')
   .description('Executa um único comando passado como argumento.')
@@ -37,12 +57,12 @@ program
   .option('-g, --gemini', 'Usar GeminiClient')
   .option('-o, --openai', 'Usar OpenAIClient em vez de GeminiClient')
   .option('-w, --web', 'Pesquisa web')
-  .action(async (command, options) => {
+  .action(async (command: string, options: any) => {
     try {
       logger.info(`Iniciando execução da CLI com comando: ${command}`);
       logger.debug(`Opções fornecidas: ${JSON.stringify(options)}`);
 
-      const config = await loadConfig();
+      const config: AgentConfig = await loadConfig();
 
       const registry = new ServiceRegistry();
       logger.info('Registrando serviços...');
@@ -56,7 +76,7 @@ program
 
       // logger.debug(`Regras carregadas: ${config.substring(0, 100)}...`);
 
-      let result;
+      let result: AgentResult;
       if (options?.web) {
         logger.info('Executando pesquisa na web com GeminiClient');
         const client = new GeminiClient(config, registry);
@@ -80,16 +100,20 @@ program
       if (result.function_calls.length > 0) {
         logger.debug(`\n Chamadas de função realizadas: ${JSON.stringify(result.function_calls, null, 2)}`);
       }
-    } catch (error) {
-      logger.error(`Erro durante a execução da CLI: ${error.message}`, { stack: error.stack });
+    } catch (error: any) {
+      logger.error(`Erro durante a execução da CLI: ${error.message}\nStack: ${error.stack}`);
       console.error(chalk.red(`Erro: ${error.message}`));
       process.exit(1);
     }
   });
 
 // Capturar erros não tratados
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error(`Erro não tratado na promessa: ${reason}`, { promise, stack: reason.stack });
+process.on('unhandledRejection', (reason: unknown, promise) => {
+  let stack = '';
+  if (typeof reason === 'object' && reason && 'stack' in reason) {
+    stack = (reason as any).stack;
+  }
+  logger.error(`Erro não tratado na promessa: ${String(reason)}`);
   console.error(chalk.red('Erro inesperado. Veja os logs para mais detalhes.'));
   process.exit(1);
 });
