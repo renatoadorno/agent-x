@@ -22,6 +22,7 @@ Seu objetivo é projetar uma CLI modular, performática e extensível, utilizand
 * **Runtime:** [Bun](mdc:https:/bun.sh) (priorize APIs nativas do Bun, como `$` e `glob`, evitando usar a API do Node.js quando possível)
 * **IA e Embeddings:** `openai` (com suporte para OpenAI, Gemini e Grok via API)
 * **Armazenamento de Embeddings:** [`vectra`](mdc:https:/www.npmjs.com/package/vectra) (JSON local)
+* **Recursos do Gemini:** Par alguns recursos do Gemini utilize a @google/genai é o pacote oficial para a API do Gemini. A @google/generative-ai está descontinuado, então deve evitar usá-lo 
 
 ---
 
@@ -60,6 +61,21 @@ Seu objetivo é projetar uma CLI modular, performática e extensível, utilizand
 * A IA deve **suportar troca de modelo**, permitindo que o usuário escolha entre OpenAI, Gemini ou Grok
 
 ---
+
+## 🌐 Regras Específicas para o Modelo Gemini
+
+- A integração padrão com o modelo **Gemini** será feita utilizando a biblioteca `openai`, já que ela suporta múltiplos modelos, incluindo o Gemini, com suporte à feature de **Function Calling**.
+- No entanto, para recursos **exclusivos do Gemini**, que **não estão disponíveis via `openai`**, como:
+    - **Pesquisa na web em tempo real** (Web Search)
+    - **Embasamento com fontes confiáveis** (Grounded Answers / Knowledge grounding)
+    - **Upload e manipulação avançada de arquivos**
+    
+    ...deve-se usar a biblioteca `@google/genai` é o pacote oficial para a API do Gemini.
+    
+    A **`@google/generative-ai`** está descontinuado, então devo evitar usá-lo 
+    
+- O sistema precisa ser capaz de **detectar** quando um prompt ou tarefa exige um desses recursos e, nesses casos, deve **redirecionar automaticamente** a execução para a lib `@google/genai`.
+- Isso pode ser feito utilizando um serviço intermediário (`GeminiSpecialFeaturesService`) que encapsula as chamadas diretas à lib da Google, separando bem da integração normal com o `openai`.
 
 ## 🔎 Similaridade Semântica com Embeddings
 
@@ -107,6 +123,45 @@ services:
 
 * A CLI deve carregar e **validar o config no boot**. Caso esteja faltando algo essencial (ex: API key), deve lançar erro amigável com instruções.
 * Caso o usuário deseje customizar o caminho do arquivo de config, permita isso via `--config <path>` ou variável de ambiente `YOURCLI_CONFIG_PATH`.
+
+---
+
+Boa! Emojis em commits são uma prática cada vez mais comum pra dar mais clareza e visualidade ao histórico, ainda mais em projetos dev-first como o seu. Aqui vai uma sugestão de regra bem direta, prática e fácil da IA seguir:
+
+---
+
+## 💬 Padrão de Commits com Emojis
+
+* Todos os commits devem seguir um padrão semântico e conter um **emoji prefixado** representando o tipo da alteração.
+* O formato recomendado é:
+
+```bash
+<emoji> <tipo>: <descrição curta>
+```
+
+* Exemplos:
+
+```bash
+✨ feat: adiciona suporte a múltiplos modelos de IA
+🐛 fix: corrige bug na geração de embeddings
+📦 chore: atualiza dependências do projeto
+📝 docs: adiciona documentação sobre configuração
+🚀 perf: melhora o tempo de resposta da CLI
+```
+
+* Para consistência, use os seguintes emojis principais (pode expandir depois):
+
+| Emoji | Tipo       | Uso                                              |
+| ----- | ---------- | ------------------------------------------------ |
+| ✨     | `feat`     | Nova funcionalidade                              |
+| 🐛    | `fix`      | Correção de bug                                  |
+| 📝    | `docs`     | Alterações em documentação                       |
+| 🎨    | `style`    | Formatação, espaços, ponto e vírgula, etc.       |
+| ♻️    | `refactor` | Refatoração de código sem alterar funcionalidade |
+| 🚀    | `perf`     | Melhorias de performance                         |
+| ✅     | `test`     | Adição ou correção de testes                     |
+| 📦    | `chore`    | Manutenção, configs, dependências                |
+| 🔧    | `config`   | Configuração de ferramentas, linters, etc.       |
 
 ---
 
