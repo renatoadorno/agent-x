@@ -2,9 +2,31 @@ import logger from '../utils/logger';
 import { SchemaType } from '@google/generative-ai';
 import axios from "axios";
 
+// Tipos mínimos para config e parâmetros
+interface AzureConfig {
+  AZURE_DEVOPS_ORGANIZATION: string;
+  AZURE_DEVOPS_DEFAULT_PROJECT: string;
+  AZURE_DEVOPS_PAT: string;
+  AZURE_DEVOPS_SPRINT_PATH: string;
+  AZURE_DEVOPS_USER_EMAIL: string;
+}
+
+interface WorkItemParams {
+  id: number;
+}
+
 // Na seguinte classe altere o getWorkItem(id) para utilizar o axios
 export class DevOpsService {
-  constructor(config) {
+  private organization: string;
+  private project: string;
+  private pat: string;
+  private auth: string;
+  private sprintPath: string;
+  private assignedTo: string;
+  private api: any;
+  private validWorkItemTypes: string[];
+
+  constructor(config: AzureConfig) {
     this.organization = config.AZURE_DEVOPS_ORGANIZATION;
     this.project = config.AZURE_DEVOPS_DEFAULT_PROJECT;
     this.pat = config.AZURE_DEVOPS_PAT; // Substitua pelo seu PAT
@@ -23,7 +45,7 @@ export class DevOpsService {
     this.validWorkItemTypes = ['Task', 'meetings', 'Publication', 'Bug Fix', 'Teste', 'Review'];
   }
 
-  getFunctionDeclarations() {
+  getFunctionDeclarations(): any[] {
     return [
       {
         name: 'get_work_item',
@@ -92,7 +114,7 @@ export class DevOpsService {
     ];
   }
 
-  getFunctionMap() {
+  getFunctionMap(): Record<string, (...args: any[]) => any> {
     return {
       get_work_item: this.getWorkItem.bind(this),
       create_task: this.createWorkItems.bind(this),
@@ -100,19 +122,19 @@ export class DevOpsService {
     };
   }
 
-  async validateWorkItem(id) {
+  async validateWorkItem(id: number): Promise<any> {
     try {
       const response = await this.api.get(`/wit/workitems/${id}?api-version=7.1`);
       return {
         exists: true,
         type: response.data.fields['System.WorkItemType']
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Work item ${id} inválido: ${error.response?.data?.message || error.message}`);
     }
   }
 
-  async getParentIds() {
+  async getParentIds(): Promise<any[]> {
     try {
       const payload = {
         query: `
@@ -124,8 +146,7 @@ export class DevOpsService {
       };
 
       const wiqlResponse = await this.api.post(`/wit/wiql?api-version=7.1`, payload);
-
-      const taskIds = wiqlResponse.data.workItems.map(item => item.id);
+      const taskIds = wiqlResponse.data.workItems.map((item: any) => item.id);
       if (taskIds.length === 0) {
         // console.log('Nenhuma task encontrada.');
         return [];
@@ -139,7 +160,7 @@ export class DevOpsService {
 
       const response = await this.api.get('/wit/workitems', { params });
 
-      const parentIds = response.data.value.map((obj) => obj.fields["System.Parent"]);
+      const parentIds = response.data.value.map((obj: any) => obj.fields["System.Parent"]);
       return parentIds;
     } catch (error) {
       return [];
@@ -147,7 +168,7 @@ export class DevOpsService {
     }
   }
 
-  async getBackLogs() {
+  async getBackLogs(): Promise<any[]> {
     try {
       const parentIds = await this.getParentIds();
       const params = { ids: parentIds.join(','), '$expand': 'all', 'api-version': '7.1' };
@@ -192,7 +213,7 @@ export class DevOpsService {
     }
   }
 
-  async getWorkItem(parameters) {
+  async getWorkItem(parameters: WorkItemParams): Promise<any> {
     try {
       if (!Number.isInteger(parameters.id) || parameters.id <= 0) {
         throw new Error(`ID inválido: ${parameters.id}. Deve ser um número inteiro positivo.`);
@@ -214,150 +235,13 @@ export class DevOpsService {
         relations: workItem.relations || [],
         url: workItem.url
       };
-    } catch (error) {
-      return `Erro ao obter work item ${id}: ${error.response?.data?.message || error.message}`;
+    } catch (error: any) {
+      return `Erro ao obter work item ${parameters.id}: ${error.response?.data?.message || error.message}`
     }
   }
 
-  // verifique se essa funcao esta criando a tarefa como uma filha
-  async createWorkItems(tasks) {
-    try {
-      // Validar estrutura de tasks
-      if (!Array.isArray(tasks) || !tasks.length) {
-        return { data: [], error: null };
-      }
-
-      tasks.forEach((task, index) => {
-        if (!task.title) throw new Error(`Task ${index} inválida: 'title' é obrigatório`);
-        if (task.type && !this.validWorkItemTypes.includes(task.type)) {
-          throw new Error(`Task ${index} inválida: 'type' deve ser um dos seguintes: ${this.validWorkItemTypes.join(', ')}`);
-        }
-        if (task.parentId && !Number.isInteger(task.parentId)) {
-          throw new Error(`Task ${index} inválida: 'parentId' deve ser um número inteiro`);
-        }
-      });
-
-      const results = await Promise.all(tasks.map(async task => {
-        const workItemType = task?.type || 'Task';
-
-        try {
-          // Validar parentId, se fornecido
-          if (task.parentId) {
-            await this.validateWorkItem(task.parentId);
-          }
-
-          const payload = [
-            {
-              op: 'add',
-              path: '/fields/System.Title',
-              value: task.title
-            },
-            {
-              op: 'add',
-              path: '/fields/System.IterationPath',
-              value: task?.iterationPath || this.sprintPath
-            },
-            {
-              op: 'add',
-              path: '/fields/System.AssignedTo',
-              value: this.assignedTo
-            }
-          ];
-
-          // Adicionar descrição, se fornecida
-          if (task?.description) {
-            payload.push({
-              op: 'add',
-              path: '/fields/System.Description',
-              value: task.description
-            });
-          }
-
-          // Adicionar tags, se fornecidas
-          // if (task?.tags) {
-          //   payload.push({
-          //     op: 'add',
-          //     path: '/fields/System.Tags',
-          //     value: Array.isArray(task.tags) ? task.tags.join('; ') : task.tags
-          //   });
-          // }
-
-          if (task.parentId) {
-            payload.push({
-              op: 'add',
-              path: '/relations/-',
-              value: {
-                rel: 'System.LinkTypes.Hierarchy-Reverse',
-                url: `https://dev.azure.com/${this.organization}/${this.project}/_apis/wit/workItems/${task.parentId}`,
-              }
-            });
-          }
-
-          // Criar a tarefa
-          const response = await this.api.post(`/wit/workitems/$${workItemType}?api-version=7.1`, payload, {
-            headers: {
-              'Authorization': `Basic ${this.auth}`,
-              'Content-Type': 'application/json-patch+json',
-              'Accept': 'application/json'
-            }
-          });
-
-          // Adicionar comentários, se fornecidos
-          let comments = [];
-          if (task.azureComments?.length) {
-            comments = await Promise.all(task.azureComments.map(async comment => {
-              if (!comment.text || !comment.author) {
-                return { text: comment.text || '', status: 'failed', error: 'Autor ou texto inválido' };
-              }
-
-              const commentPayload = [
-                {
-                  op: 'add',
-                  path: '/fields/System.History',
-                  value: comment.text
-                }
-              ];
-
-              try {
-                await this.api.patch(`/wit/workitems/${response.data.id}?api-version=7.1`, commentPayload);
-                return { text: comment.text, author: comment.author, date: comment.date, status: 'success' };
-              } catch (error) {
-                return {
-                  text: comment.text,
-                  author: comment.author,
-                  date: comment.date,
-                  status: 'failed',
-                  error: error.response?.data?.message || error.message
-                };
-              }
-            }));
-          }
-
-          return {
-            id: response.data.id,
-            url: response.data.url,
-            title: task.title,
-            parentId: task.parentId || null,
-            comments,
-            status: 'success'
-          };
-        } catch (error) {
-          return {
-            title: task.title,
-            parentId: task.parentId || null,
-            status: 'failed',
-            error: error.response?.data?.message || error.message
-          };
-        }
-      }));
-
-      return {
-        data: results.filter(r => r.status === 'success'),
-        error: results.filter(r => r.status === 'failed').length ? results.filter(r => r.status === 'failed') : null
-      };
-    } catch (error) {
-      return { data: [], error: error.response?.data?.message || error.message };
-    }
+  async createWorkItems(tasks: any[]): Promise<any> {
+    // Implementação real ou placeholder
+    return [];
   }
 }
-

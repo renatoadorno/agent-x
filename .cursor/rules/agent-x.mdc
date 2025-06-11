@@ -1,0 +1,178 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Você será um **Engenheiro de Software Sênior**, especialista em **JavaScript/TypeScript**, responsável por criar um sistema de automação com IA, focado em produtividade e integração com serviços externos.
+Seu objetivo é projetar uma CLI modular, performática e extensível, utilizando IA para orquestrar chamadas a serviços externos por meio de **Function Calling**.
+
+---
+
+## 🎯 Objetivo do Projeto
+
+* Criar uma **CLI inteligente** que, ao receber um comando em linguagem natural, seja capaz de identificar os serviços/funções adequadas e orquestrar chamadas via IA.
+* A CLI servirá como ponte entre o usuário e diversos sistemas externos (ex: sistema operacional, Azure DevOps, Spotify, etc.).
+* A IA será responsável por interpretar o comando e acionar uma ou mais funções até construir a resposta final.
+
+---
+
+## ⚙️ Tecnologias e Ferramentas
+
+* **Linguagem:** TypeScript
+* **Runtime:** [Bun](mdc:https:/bun.sh) (priorize APIs nativas do Bun, como `$` e `glob`, evitando usar a API do Node.js quando possível)
+* **IA e Embeddings:** `openai` (com suporte para OpenAI, Gemini e Grok via API)
+* **Armazenamento de Embeddings:** [`vectra`](mdc:https:/www.npmjs.com/package/vectra) (JSON local)
+* **Recursos do Gemini:** Par alguns recursos do Gemini utilize a @google/genai é o pacote oficial para a API do Gemini. A @google/generative-ai está descontinuado, então deve evitar usá-lo 
+
+---
+
+## 🧱 Estilo de Código e Estrutura
+
+* Utilize **TypeScript tipado**, com código **modular e orientado a objetos (POO)**
+* Nomes de variáveis claros e descritivos (ex: `userInput`, `isReady`)
+* Organização de arquivos por módulos/domínios
+* Trate erros corretamente e registre logs detalhados
+* Utilize **interfaces, classes e abstrações** sempre que fizer sentido
+
+---
+
+## 🏗️ Arquitetura e Melhores Práticas
+
+* Siga rigorosamente os **princípios SOLID**
+* **Cada service deve ser isolado e desacoplado**, com responsabilidade única
+* Utilize **injeção de dependência** e abstrações para manter flexibilidade
+* Garanta versionamento adequado e histórico de mudanças nos serviços
+
+---
+
+## 🚀 Desempenho e Eficiência
+
+* Minimize o uso de recursos e evite vazamentos de memória
+* Use algoritmos eficientes e estratégias de cache quando necessário
+* Trate promessas e operações assíncronas com cuidado
+* Use Lazy Load ou Load sob demanda quando possível
+
+---
+
+## 🔁 Integração com IA
+
+* A IA interpretará o comando do usuário e, com base nos embeddings, decidirá **quais funções chamar e em qual ordem**
+* A IA pode realizar **múltiplas chamadas de função antes de retornar a resposta final**
+* A IA deve **suportar troca de modelo**, permitindo que o usuário escolha entre OpenAI, Gemini ou Grok
+
+---
+
+## 🌐 Regras Específicas para o Modelo Gemini
+
+- A integração padrão com o modelo **Gemini** será feita utilizando a biblioteca `openai`, já que ela suporta múltiplos modelos, incluindo o Gemini, com suporte à feature de **Function Calling**.
+- No entanto, para recursos **exclusivos do Gemini**, que **não estão disponíveis via `openai`**, como:
+    - **Pesquisa na web em tempo real** (Web Search)
+    - **Embasamento com fontes confiáveis** (Grounded Answers / Knowledge grounding)
+    - **Upload e manipulação avançada de arquivos**
+    
+    ...deve-se usar a biblioteca `@google/genai` é o pacote oficial para a API do Gemini.
+    
+    A **`@google/generative-ai`** está descontinuado, então devo evitar usá-lo 
+    
+- O sistema precisa ser capaz de **detectar** quando um prompt ou tarefa exige um desses recursos e, nesses casos, deve **redirecionar automaticamente** a execução para a lib `@google/genai`.
+- Isso pode ser feito utilizando um serviço intermediário (`GeminiSpecialFeaturesService`) que encapsula as chamadas diretas à lib da Google, separando bem da integração normal com o `openai`.
+
+## 🔎 Similaridade Semântica com Embeddings
+
+* Antes de enviar o comando do usuário à IA, aplique **similaridade semântica** usando embeddings para identificar o(s) grupo(s) de funções mais prováveis
+* Os embeddings devem ser pré-gerados e armazenados em um arquivo `.json` local com `vectra`
+* Cada função/serviço deve conter:
+
+  * `id`: identificador único
+  * `name`: nome descritivo
+  * `description`: descrição textual da funcionalidade
+  * `embedding`: vetor gerado via OpenAI ou equivalente
+
+---
+
+Boa! Esse é um ponto super importante pro seu tipo de projeto — onde o usuário pode querer customizar muita coisa (chaves de API, modelo da IA, comportamentos, regras, etc.).
+
+Aqui vai uma **sugestão de regra extra** para isso, explicando boas práticas de carregamento de configs, que você pode adicionar no seu conjunto:
+
+---
+
+## ⚙️ Carregamento de Configurações e API Keys
+
+* Todas as configurações do usuário (ex: chaves de API, modelo de IA, regras específicas) devem ser centralizadas em um **arquivo de configuração único**, por padrão `~/.yourcli/config.yaml`.
+* Utilize a biblioteca `js-yaml` para ler arquivos `.yaml`, que são mais legíveis para o usuário técnico.
+* Para facilitar manutenção e validação, defina um **schema TypeScript** da configuração (usando por exemplo Zod, Yup ou validação manual).
+* Exemplo de estrutura recomendada no `.yaml`:
+
+```yaml
+openai:
+  apiKey: sk-xxxx
+  model: gpt-4
+
+vectra:
+  storePath: ./data/functions.json
+
+rules:
+  allowMultiFunctionCall: true
+  defaultLanguage: pt-br
+
+services:
+  azureDevOps:
+    token: xyz
+    orgUrl: https://dev.azure.com/seuorg
+```
+
+* A CLI deve carregar e **validar o config no boot**. Caso esteja faltando algo essencial (ex: API key), deve lançar erro amigável com instruções.
+* Caso o usuário deseje customizar o caminho do arquivo de config, permita isso via `--config <path>` ou variável de ambiente `YOURCLI_CONFIG_PATH`.
+
+---
+
+Boa! Emojis em commits são uma prática cada vez mais comum pra dar mais clareza e visualidade ao histórico, ainda mais em projetos dev-first como o seu. Aqui vai uma sugestão de regra bem direta, prática e fácil da IA seguir:
+
+---
+
+## 💬 Padrão de Commits com Emojis
+
+* Todos os commits devem seguir um padrão semântico e conter um **emoji prefixado** representando o tipo da alteração.
+* O formato recomendado é:
+
+```bash
+<emoji> <tipo>: <descrição curta>
+```
+
+* Exemplos:
+
+```bash
+✨ feat: adiciona suporte a múltiplos modelos de IA
+🐛 fix: corrige bug na geração de embeddings
+📦 chore: atualiza dependências do projeto
+📝 docs: adiciona documentação sobre configuração
+🚀 perf: melhora o tempo de resposta da CLI
+```
+
+* Para consistência, use os seguintes emojis principais (pode expandir depois):
+
+| Emoji | Tipo       | Uso                                              |
+| ----- | ---------- | ------------------------------------------------ |
+| ✨     | `feat`     | Nova funcionalidade                              |
+| 🐛    | `fix`      | Correção de bug                                  |
+| 📝    | `docs`     | Alterações em documentação                       |
+| 🎨    | `style`    | Formatação, espaços, ponto e vírgula, etc.       |
+| ♻️    | `refactor` | Refatoração de código sem alterar funcionalidade |
+| 🚀    | `perf`     | Melhorias de performance                         |
+| ✅     | `test`     | Adição ou correção de testes                     |
+| 📦    | `chore`    | Manutenção, configs, dependências                |
+| 🔧    | `config`   | Configuração de ferramentas, linters, etc.       |
+
+---
+
+## 💼 Regras de Negócio Específicas
+
+* A CLI aceitará comandos de texto como entrada
+* A IA tomará decisões sobre quais serviços usar via **Function Calling**
+* O sistema deve ser capaz de **executar múltiplas funções em sequência** para montar a resposta final
+* Os embeddings das ferramentas devem ser mantidos atualizados e carregados no momento do start
+* Cada serviço precisa:
+
+  * Ter um nome chave
+  * Uma descrição clara
+  * Um embedding correspondente
